@@ -1,5 +1,8 @@
 import unittest
+from unittest.mock import MagicMock, patch
+
 import scraperHelpers
+
 
 class ScraperHelpersTest(unittest.TestCase):
     def test_getSoup(self):
@@ -7,6 +10,14 @@ class ScraperHelpersTest(unittest.TestCase):
 
     def test_getSoup_https(self):
         self.assertIsNotNone(scraperHelpers.getSoup("https://daum.net"))
+
+    @patch("scraperHelpers._getResponseWithCurlCffi")
+    def test_getResponse_prefers_curl_cffi(self, mock_curl):
+        mock_curl.return_value = scraperHelpers._BytesResponse(b"<html></html>", "https://example.com/")
+        response = scraperHelpers.getResponse("https://example.com/")
+        self.assertIsNotNone(response)
+        self.assertEqual(response.read(), b"<html></html>")
+        mock_curl.assert_called_once_with("https://example.com/")
 
     def test_getMainUrl(self):
         mainUrl = "https://www.domain1.com/"

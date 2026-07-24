@@ -1,12 +1,17 @@
 import argparse
-from http.client import HTTPResponse
+import logging
+import random
+import ssl
 import sys
-from typing import Optional
+import time
+from http.client import HTTPResponse
+from typing import Optional, Protocol, Union
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
-from urllib.error import HTTPError, URLError
-import logging
+
 import setting
+
 # 로그파일 초기화용
 mySetting = setting.Setting()
 
@@ -18,9 +23,22 @@ except ImportError:
     logging.error(message)
     sys.stderr.write(message)
     sys.exit(1)
-import time
-import random
-import ssl
+
+
+class FetchResponse(Protocol):
+    url: str
+
+    def read(self) -> bytes:
+        ...
+
+
+class _BytesResponse:
+    def __init__(self, content: bytes, url: str):
+        self._content = content
+        self.url = url
+
+    def read(self) -> bytes:
+        return self._content
 
 
 def getSoup(url: str):
@@ -32,26 +50,56 @@ def getSoup(url: str):
         logging.error(f"Exception getSoup url: {url} , error: {str(e)}")
     return None
 
+
 def getHtml(url: str):
     try:
         time.sleep(random.randrange(1, 4))
         response = getResponse(url)
         if response is not None:
-            return response.read().decode('utf-8','replace')
+            return response.read().decode('utf-8', 'replace')
     except Exception as e:
         logging.error("Exception getHtml url: "+url+" , error: " + str(e))
     return None
 
-def getResponse(url) -> Optional[HTTPResponse]:
+
+def _getResponseWithCurlCffi(url: str) -> Optional[_BytesResponse]:
+    try:
+        from curl_cffi import requests as curl_requests
+    except ImportError:
+        logging.debug("curl_cffi가 설치되어 있지 않아 urllib로 요청합니다.")
+        return None
+
+    try:
+        response = curl_requests.get(
+            url,
+            impersonate="chrome120",
+            timeout=30,
+            verify=False,
+        )
+        if response.status_code > 400:
+            logging.error(
+                "일시적 접속실패이거나 사이트가 정상적으로 작동하지 않거나 "
+                f"사이트보안이 강화되었거나 url이 잘못되었습니다. 에러코드: {response.status_code}, url: {url}"
+            )
+            return None
+        logging.debug(f"curl_cffi로 HTML을 가져왔습니다. url: {url}")
+        return _BytesResponse(response.content, str(response.url))
+    except Exception as e:
+        logging.error(f"curl_cffi 요청 중 오류가 발생했어요. 원인: {e}, url: {url}")
+        return None
+
+
+def _getResponseWithUrllib(url: str) -> Optional[HTTPResponse]:
     try:
         request = Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        # python 3.6이상에서
         context = ssl._create_unverified_context()
-        # urlopen(request, context=context) as response
         return urlopen(request, context=context)
     except HTTPError as er:
         if er.code > 400:
-            logging.error(f"일시적 접속실패이거나 사이트가 정상적으로 작동하지 않거나 사이트보안이 강화되었거나 url이 잘못되었습니다. 에러코드: {er.code}, url: {url}")
+            logging.error(
+                "일시적 접속실패이거나 사이트가 정상적으로 작동하지 않거나 "
+                f"사이트보안이 강화되었거나 url이 잘못되었습니다. 에러코드: {er.code}, url: {url}"
+            )
         else:
             raise
     except URLError as er:
@@ -60,12 +108,21 @@ def getResponse(url) -> Optional[HTTPResponse]:
         logging.error(f"네트워크 연결이 원격 호스트에 의해 강제로 재설정되었어요. 원인: {er.strerror}, url: {url}")
     return None
 
+
+def getResponse(url: str) -> Optional[Union[HTTPResponse, _BytesResponse]]:
+    response = _getResponseWithCurlCffi(url)
+    if response is not None:
+        return response
+    return _getResponseWithUrllib(url)
+
+
 def getSoupFromFile(filePath: str):
     try:
         soup = BeautifulSoup(open(filePath), "html.parser")
         return soup
     except Exception as e:
         logging.error("Exception getSoupFromFile path: "+filePath+" , error: " + str(e))
+
 
 def getMainUrl(url: str, responseUrl: str) -> str:
     if responseUrl != url:
@@ -83,7 +140,7 @@ if __name__ == '__main__':
     parser.add_argument("url", help="저장할 url")
     parser.add_argument("--savePath", help="HTML을 저장할 경로")
     args = parser.parse_args()
-    
+
     logging.info("HTML을 가져오는 중...")
     html = getHtml(args.url)
     if html is not None:
@@ -93,4 +150,3 @@ if __name__ == '__main__':
         message = f"HTML을 가져오는 데 실패했습니다: {args.url}"
         logging.error(message)
         sys.stderr.write(message)
-
