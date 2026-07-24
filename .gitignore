@@ -110,6 +110,8 @@ venv.bak/
 
 config
 transmission_script
+src/config
+src/transmission_script
 
 # for vscode
 .vscode

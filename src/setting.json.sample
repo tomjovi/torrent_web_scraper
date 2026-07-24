@@ -1,5 +1,5 @@
 {
-  "$schema": "../settingSchema.json",
+  "$schema": "settingSchema.json",
   "downloadRules":[
     {
       "name": "firstRule",

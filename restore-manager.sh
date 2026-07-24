@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# 502 등 문제 발생 시 공식 이미지로 manager를 복구합니다.
+# 기존 /volume1/docker/torrentscraper (istandthon7/torrentscraper manager) 복구용입니다.
+# torrent_web_scraper 의 새 scraper 서비스와는 별개입니다.
 #
 # 사용법:
 #   cd /volume1/docker/torrent_web_scraper
