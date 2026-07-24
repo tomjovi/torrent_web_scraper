@@ -1,0 +1,36 @@
+# 수정된 Python 스크래퍼 소스를 마운트해서 사용하는 예시입니다.
+# 기존 /volume1/docker/torrentscraper/docker-compose.yml 의 manager 서비스에 아래 내용을 반영하세요.
+#
+# 사용 전 준비:
+# 1) 이 저장소를 NAS에 clone
+#    git clone https://github.com/tomjovi/torrent_web_scraper.git /volume1/docker/torrent_web_scraper
+# 2) docker/Dockerfile 로 이미지 빌드
+#    cd /volume1/docker/torrent_web_scraper
+#    sudo docker build -f docker/Dockerfile -t torrentscraper-custom:latest .
+# 3) 기존 compose 의 manager 서비스를 아래처럼 수정 후 재기동
+
+version: "2.2"
+
+services:
+  manager:
+    image: torrentscraper-custom:latest
+    container_name: torrentscraper-manager
+    environment:
+      - TZ=Asia/Seoul
+      - LC_ALL=C.UTF-8
+      - VIDEO=${VIDEO}
+      - DOWNLOADS=${DOWNLOADS}
+      - ID=${ID}
+      - PASS=${PASS}
+    volumes:
+      - ${VIDEO}:/tm/video
+      # 수정된 Python 소스 마운트
+      - /volume1/docker/torrent_web_scraper:/scraper
+      # 기존 설정(키워드, setting.json 등)은 named volume 유지
+      - torrent_manager:/scraper/config
+    ports:
+      - ${PORT}:80
+    restart: unless-stopped
+
+volumes:
+  torrent_manager:
