@@ -72,7 +72,8 @@ if [ -n "$ACTIVE_CONTAINER" ]; then
   echo "==> 컨테이너 상태"
   run docker ps --filter "name=${ACTIVE_CONTAINER}"
   echo
-  echo "웹 UI가 정상인지 확인하세요. 이후 curl_cffi 적용은 docker-compose.source.example.yml 을 참고해 단계적으로 진행하세요."
+  echo "웹 UI가 정상인지 확인하세요."
+  echo "curl_cffi 스크래퍼는 /volume1/docker/torrent_web_scraper (별도 compose) 에서 운영합니다."
 else
   echo "경고: manager 컨테이너가 실행되지 않았습니다."
   echo "  sudo docker compose -f ${COMPOSE_FILE} logs manager --tail 100"

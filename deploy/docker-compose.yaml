@@ -1,14 +1,13 @@
-# torrent_web_scraper 전용 compose (기존 /volume1/docker/torrentscraper 와 분리)
+# 배포 위치: /volume1/docker/torrent_web_scraper/docker-compose.yaml
+# 소스 위치: /volume1/dev/torrent_web_scraper (SOURCE_DIR)
 #
-# 사전 준비:
-# 1) cp .env.example .env 후 값 수정
-# 2) docker volume ls 로 기존 config 볼륨 이름 확인 후 CONFIG_VOLUME 설정
-# 3) docker compose up -d --build
+# 주의: 기존 /volume1/docker/torrentscraper manager 와 동시에 스크랩하면
+#       토렌트가 중복 추가될 수 있습니다. 한쪽 스케줄/사이트를 비활성화하세요.
 
 services:
   scraper:
     build:
-      context: .
+      context: ${SOURCE_DIR}
       dockerfile: docker/Dockerfile
     image: torrent-web-scraper:latest
     container_name: torrent-web-scraper
@@ -19,14 +18,14 @@ services:
       TZ: ${TZ:-Asia/Seoul}
       LC_ALL: ${LC_ALL:-C.UTF-8}
     volumes:
-      - ./src:/scraper
-      - torrent_manager:/scraper/config
+      - ${SOURCE_DIR}/src:/scraper
+      - torrent_config:/scraper/config
       - ${VIDEO}:${VIDEO}
       - ${DOWNLOADS}:${DOWNLOADS}
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
 volumes:
-  torrent_manager:
+  torrent_config:
     external: true
     name: ${CONFIG_VOLUME}
