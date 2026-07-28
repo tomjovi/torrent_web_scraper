@@ -1,8 +1,14 @@
 # 배포 위치: /volume1/docker/torrent_web_scraper/docker-compose.yaml
 # 소스 위치: /volume1/dev/torrent_web_scraper (SOURCE_DIR)
 #
-# 주의: 기존 /volume1/docker/torrentscraper manager 와 동시에 스크랩하면
-#       토렌트가 중복 추가될 수 있습니다. 한쪽 스케줄/사이트를 비활성화하세요.
+# 기존 /volume1/docker/torrentscraper 는 그대로 두고, 이 compose 만 별도로 실행합니다.
+#
+# 주의 (반드시 읽으세요):
+# 1) 기존 manager 와 동시에 스크랩하면 토렌트가 중복 추가됩니다.
+# 2) CONFIG_VOLUME 을 기존 manager 와 공유할 경우, manager 쪽 스케줄/사이트를 꺼 두세요.
+# 3) setting.json 의 torrentClient.host 는 127.0.0.1 이 아니어야 합니다.
+#    - LEGACY_DOCKER_NETWORK 연결 시: transmission
+#    - 호스트 포트(9091) 사용 시: host.docker.internal 또는 NAS IP
 
 services:
   scraper:
@@ -24,6 +30,14 @@ services:
       - ${DOWNLOADS}:${DOWNLOADS}
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    networks:
+      - default
+      - legacy
+
+networks:
+  legacy:
+    external: true
+    name: ${LEGACY_DOCKER_NETWORK}
 
 volumes:
   torrent_config:

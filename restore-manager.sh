@@ -5,7 +5,7 @@ set -euo pipefail
 # torrent_web_scraper 의 새 scraper 서비스와는 별개입니다.
 #
 # 사용법:
-#   cd /volume1/docker/torrent_web_scraper
+#   cd /volume1/dev/torrent_web_scraper
 #   ./restore-manager.sh
 #
 # 환경변수:
@@ -50,12 +50,13 @@ path = pathlib.Path(sys.argv[1])
 text = path.read_text(encoding="utf-8")
 
 text = re.sub(
-    r'^\s*-\s*/volume1/docker/torrent_web_scraper:/scraper\s*\n',
+    r'^\s*-\s*/volume1/(?:dev/)?torrent_web_scraper(?:/src)?:/scraper\s*\n',
     '',
     text,
     flags=re.MULTILINE,
 )
 text = text.replace('torrentscraper-custom:latest', 'istandthon7/torrentscraper:latest')
+text = text.replace('torrent-web-scraper:latest', 'istandthon7/torrentscraper:latest')
 
 path.write_text(text, encoding="utf-8")
 print(f"==> compose 복구 완료: {path}")
@@ -73,7 +74,7 @@ if [ -n "$ACTIVE_CONTAINER" ]; then
   run docker ps --filter "name=${ACTIVE_CONTAINER}"
   echo
   echo "웹 UI가 정상인지 확인하세요."
-  echo "curl_cffi 스크래퍼는 /volume1/docker/torrent_web_scraper (별도 compose) 에서 운영합니다."
+  echo "curl_cffi 스크래퍼는 /volume1/docker/torrent_web_scraper compose (별도) 에서 운영합니다."
 else
   echo "경고: manager 컨테이너가 실행되지 않았습니다."
   echo "  sudo docker compose -f ${COMPOSE_FILE} logs manager --tail 100"
