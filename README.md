@@ -22,6 +22,33 @@ https://github.com/qbittorrent/qBittorrent/wiki/Installing-qBittorrent
 
     # ./install.sh venv
 
+## 1.1.3 NAS Docker 배포 (curl_cffi, 기존 torrentscraper 와 분리)
+
+기존 `/volume1/docker/torrentscraper` (istandthon7 manager) 는 그대로 두고, curl_cffi 스크래퍼만 별도 compose 로 실행합니다.
+
+| 경로 | 용도 |
+|------|------|
+| `/volume1/dev/torrent_web_scraper` | git 소스 |
+| `/volume1/docker/torrent_web_scraper` | `docker-compose.yaml`, `.env` 만 |
+
+```bash
+# 1) 소스 이동 (기존 clone 이 docker 아래에 있을 때)
+mkdir -p /volume1/dev
+mv /volume1/docker/torrent_web_scraper /volume1/dev/torrent_web_scraper
+
+# 2) 배포 파일 준비
+cd /volume1/dev/torrent_web_scraper
+./deploy/setup.sh
+
+# 3) .env 수정 후 기동
+#    /volume1/docker/torrent_web_scraper/.env
+cd /volume1/dev/torrent_web_scraper
+./update.sh
+```
+
+**주의:** 기존 manager 와 동시 스크랩 시 토렌트 중복 추가. config 볼륨 공유 시 manager 스케줄을 끄세요.  
+`setting.json` 의 `torrentClient.host` 는 `transmission` 또는 `host.docker.internal` 로 설정하세요.
+
 # 1.2 설정
 설치가 완료되면 config디렉토리의 setting.json 파일을 환경에 맞게 수정해야 합니다.  
 'online json editor'를 검색하여 수정하는 것을 추천합니다.
